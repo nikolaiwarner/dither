@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const { createCanvas, loadImage } = require('canvas')
 const fs = require('fs')
 const minimist = require('minimist')
