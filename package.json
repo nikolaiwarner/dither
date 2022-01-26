@@ -1,5 +1,5 @@
 {
-  "name": "dither",
+  "name": "dither-cli",
   "version": "1.0.0",
   "description": "a command line tool for dithering images",
   "main": "index.js",
