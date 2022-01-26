@@ -1,0 +1,19 @@
+{
+  "name": "dither",
+  "version": "1.0.0",
+  "description": "a command line tool for dithering images",
+  "main": "index.js",
+  "bin": {
+    "dither": "index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "nickwarner",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.8.0",
+    "minimist": "^1.2.5",
+    "rgbquant": "https://github.com/Hypfer/RgbQuant.js/tree/patch-2"
+  }
+}

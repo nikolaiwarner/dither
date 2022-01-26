@@ -1,0 +1,17 @@
+module.exports = {
+  'blackwhite': ['#ffffff', '#000000'],
+  'blue': ['#ffffff','#41e2f4','#0c9fa9','#000000'],
+  'bluemono': ['#dbf9ff', '#02474f'],
+  'blueyellow': ['#134E87', '#FFF585'],
+  'cmyk': ['#000000','#ffff00','#00FFFF','#FF00FF','#FFFFFF'],
+  'gameboy': ['#CADC9F','#0F380F','#306230','#8BAC0F','#9BBC0F'],
+  'green': ['#ffffff','#c4f441','#6da90c','#000000'],
+  'greenmono': ['#eeffdb', '#1d3801'],
+  'purplegreen': ['#76C066', '#AD2BBB'],
+  'red': ['#ffffff','#f46842','#aa2f0d','#000000'],
+  'redmono': ['#ffe3db', '#4f1403'],
+  'rgby': ['#FF0000','#00FF00','#0000FF','#FFFF00'],
+  'yellow': ['#ffffff','#f4eb41','#a9a40c','#000000'],
+  'yellowmono': ['#fffedb', '#303001'],
+  'yellowred': ['#FFEE2C', '#E20023'],
+}
