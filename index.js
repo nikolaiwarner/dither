@@ -10,16 +10,26 @@ const args = minimist(process.argv.slice(2))
 
 const usage = `Usage: dither --palette="#aaaaaa,#bbbbbb,#cccccc" -i <input> -o <output>
 
--i             Input filename
---preset       Name of preset palette
 --palette      Comma separated list of hex colors for palette
--s --scale     Scale the image to this max width or height
+--preset       Name of preset palette
 --serpentine   Enable/disable serpentine dithering
+-i             Input filename
+-l             List available presets
 -o             Output filename
+-s --scale     Scale the image to this max width or height
+-v             Verbose
 
 `
 
-if (args.i) {
+if (args.l) {
+  console.log('Available presets:')
+  Object.keys(palettes).forEach((name) => {
+    console.log(`  ${name}`)
+    if (args.v) {
+      console.log(`  ${palettes[name].join(', ')}\n`)
+    }
+  })
+} else if (args.i) {
   dither()
 } else {
   console.log(usage)
