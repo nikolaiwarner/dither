@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const { createCanvas, loadImage } = require('canvas')
 const fs = require('fs')
+const GIFEncoder = require('gifencoder')
 const minimist = require('minimist')
 const RgbQuant = require('rgbquant')
 
@@ -74,11 +75,13 @@ function dither() {
 
   if (inputPath.length) {
     console.log('Dithering: ' + inputPath)
+    let inputStats
     try {
-      const inputStats = fs.statSync(inputPath)
+      inputStats = fs.statSync(inputPath)
       console.log('Input size: ' + formatBytes(inputStats.size))
     } catch (err) {
-      console.log('Could not read file:' + inputPath)
+      console.log('Could not read file: ' + inputPath)
+      return
     }
     loadImage(inputPath).then((image) => {
       const scale = args.s || args.scale
@@ -104,15 +107,29 @@ function dither() {
       imgData.data.set(ditherResult) 
       ctx.putImageData(imgData, 0, 0)
 
-      const outputPath = args.o || inputPath + '-dither.png'
-      fs.writeFileSync(outputPath, canvas.toBuffer())
+      const outputPath = args.o || inputPath + '-dither.gif'
+      
+      // Convert to GIF
+      const encoder = new GIFEncoder(width, height)
+      encoder.createReadStream().pipe(fs.createWriteStream(outputPath))
+
+      encoder.start()
+      encoder.setRepeat(0)   // 0 for repeat, -1 for no-repeat
+      encoder.setDelay(500)  // frame delay in ms
+      encoder.setQuality(10) // image quality. 10 is default.
+
+      encoder.addFrame(ctx)
+      encoder.finish()
+
+      // Output stats
       try {
-        const inputStats = fs.statSync(outputPath)
-        console.log('Output size: ' + formatBytes(inputStats.size))
+        const outputStats = fs.statSync(outputPath)
+        console.log('Output size: ' + formatBytes(outputStats.size))
+        console.log('Percentage reduction: ' + (100 - (inputStats.size / outputStats.size)).toFixed(2) + '%')
       } catch (err) {
         console.log('Could not read file:' + outputPath)
       }
-      console.log('Palette: ', paletteToHex(reducedPalette).join(','))
+      console.log('Final palette: ', paletteToHex(reducedPalette).join(','))
       console.log('Dithered: ' + outputPath)
     })
   }

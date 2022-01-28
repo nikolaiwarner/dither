@@ -12,7 +12,8 @@
   "author": "nickwarner",
   "license": "MIT",
   "dependencies": {
-    "canvas": "^2.8.0",
+    "canvas": "^2.9.0",
+    "gifencoder": "^2.0.1",
     "minimist": "^1.2.5",
     "rgbquant": "https://github.com/Hypfer/RgbQuant.js/tree/patch-2"
   }
