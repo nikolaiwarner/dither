@@ -11,32 +11,31 @@ const args = minimist(process.argv.slice(2))
 
 const usage = `Usage: dither --palette="#aaaaaa,#bbbbbb,#cccccc" -i <input> -o <output>
 
---palette      Comma separated list of hex colors for palette
---preset       Name of preset palette
---serpentine   Enable/disable serpentine dithering
--i             Input filename
--l             List available presets
--o             Output filename
--s --scale     Scale the image to this max width or height
--v             Verbose
+--palette        Comma separated list of hex colors for palette
+--serpentine     Enable/disable serpentine dithering
+--silent         Don't output status messages
+-i               Input filename
+-l               List available presets
+-o               Output filename
+-p / --preset    Name of preset palette
+-s / --scale     Scale the image to this max width or height
+-v               Verbose
 
 `
 
+let silent = false
+
 if (args.l) {
-  console.log('Available presets:')
-  Object.keys(palettes).forEach((name) => {
-    console.log(`  ${name}`)
-    if (args.v) {
-      console.log(`  ${palettes[name].join(', ')}\n`)
-    }
-  })
+  listPresets()
 } else if (args.i) {
   dither()
 } else {
-  console.log(usage)
+  status(usage)
 }
 
 function dither() {
+  silent = args.silent || false
+  
   const rgbQuantOptions = {
     boxPxls: 2,
     boxSize: [8, 8],
@@ -54,33 +53,31 @@ function dither() {
     useCache: true,
   }
 
-  if (args.preset) {
-    const preset = palettes[args.preset]
+  const presetName = args.preset || args.p
+  if (presetName) {
+    const preset = palettes[presetName]
     if (!preset) {
-      console.log(`Unknown preset: ${args.preset}`)
-      console.log('Available presets:')
-      Object.keys(palettes).forEach((name) => {
-        console.log(`  ${name}`)
-      })
+      status(`Unknown preset: ${presetName}`)
+      listPresets()
       return
     }
   }
 
   const palette = 
     (args.palette && args.palette.split(',')) ?? 
-    (args.preset && palettes[args.preset]) ??
+    (presetName && palettes[presetName]) ??
     []
 
   let inputPath = args.i || ''
 
   if (inputPath.length) {
-    console.log('Dithering: ' + inputPath)
+    status('Dithering: ' + inputPath)
     let inputStats
     try {
       inputStats = fs.statSync(inputPath)
-      console.log('Input size: ' + formatBytes(inputStats.size))
+      status('Input size: ' + formatBytes(inputStats.size))
     } catch (err) {
-      console.log('Could not read file: ' + inputPath)
+      status('Could not read file: ' + inputPath)
       return
     }
     loadImage(inputPath).then((image) => {
@@ -121,18 +118,30 @@ function dither() {
       encoder.addFrame(ctx)
       encoder.finish()
 
-      // Output stats
-      try {
-        const outputStats = fs.statSync(outputPath)
-        console.log('Output size: ' + formatBytes(outputStats.size))
-        console.log('Percentage reduction: ' + (100 - (inputStats.size / outputStats.size)).toFixed(2) + '%')
-      } catch (err) {
-        console.log('Could not read file:' + outputPath)
-      }
-      console.log('Final palette: ', paletteToHex(reducedPalette).join(','))
-      console.log('Dithered: ' + outputPath)
+      setTimeout(() => {
+        // Output stats
+        try {
+          const outputStats = fs.statSync(outputPath)
+          status('Output size: ' + formatBytes(outputStats.size))
+          status('Percentage reduction: ' + (100 - (inputStats.size / outputStats.size)).toFixed(2) + '%')
+        } catch (err) {
+          status('Could not read file:' + outputPath)
+        }
+        status('Final palette: ' + paletteToHex(reducedPalette).join(','))
+        status('Dithered: ' + outputPath)
+      }, 1000)
     })
   }
+}
+
+function listPresets() {
+  status('Available presets:')
+  Object.keys(palettes).forEach((name) => {
+    status(`  ${name}`)
+    if (args.v) {
+      status(`  ${palettes[name].join(', ')}\n`)
+    }
+  })
 }
 
 function paletteToHex (palette) {
@@ -166,4 +175,10 @@ function formatBytes(bytes, decimals = 2) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+function status(text) {
+  if (!silent) {
+    console.log(text)
+  }
 }
