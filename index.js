@@ -9,11 +9,14 @@ const palettes = require('./palettes.js')
 
 const args = minimist(process.argv.slice(2))
 
+const DEFAULT_FILE_FORMAT = 'gif'
+const FILE_FORMATS = ['gif', 'png']
 const usage = `Usage: dither --palette="#aaaaaa,#bbbbbb,#cccccc" -i <input> -o <output>
 
 --palette        Comma separated list of hex colors for palette
 --serpentine     Enable/disable serpentine dithering
 --silent         Don't output status messages
+-f / --format    Image format: ${FILE_FORMATS.map((f) => `"${f}"`).join(' or ')}
 -i               Input filename
 -l               List available presets
 -o               Output filename
@@ -53,12 +56,22 @@ function dither() {
     useCache: true,
   }
 
+  const fileExtention = args.o && args.o.split('.').length > 1 && args.o.split('.').pop()
+  const fileFormat = (args.f || args.format || fileExtention || DEFAULT_FILE_FORMAT).toLowerCase()
+  if (!FILE_FORMATS.includes(fileFormat)) {
+    status('Unknown output format: ' + fileFormat)
+    status('Available formats: ' + FILE_FORMATS.map((f) => `"${f}"`).join(' '))
+    process.exitCode = 1
+    return
+  }
+
   const presetName = args.preset || args.p
   if (presetName) {
     const preset = palettes[presetName]
     if (!preset) {
       status(`Unknown preset: ${presetName}`)
       listPresets()
+      process.exitCode = 1
       return
     }
   }
@@ -104,19 +117,21 @@ function dither() {
       imgData.data.set(ditherResult) 
       ctx.putImageData(imgData, 0, 0)
 
-      const outputPath = args.o || inputPath + '-dither.gif'
-      
-      // Convert to GIF
-      const encoder = new GIFEncoder(width, height)
-      encoder.createReadStream().pipe(fs.createWriteStream(outputPath))
-
-      encoder.start()
-      encoder.setRepeat(0)   // 0 for repeat, -1 for no-repeat
-      encoder.setDelay(500)  // frame delay in ms
-      encoder.setQuality(10) // image quality. 10 is default.
-
-      encoder.addFrame(ctx)
-      encoder.finish()
+      let outputPath = args.o || inputPath + '-dither.' + fileFormat
+      if (fileFormat === 'gif') {
+        // Convert to GIF and save
+        const encoder = new GIFEncoder(width, height)
+        encoder.createReadStream().pipe(fs.createWriteStream(outputPath))
+        encoder.start()
+        encoder.setRepeat(0)
+        encoder.setDelay(500)
+        encoder.setQuality(10)
+        encoder.addFrame(ctx)
+        encoder.finish()
+      } else if (fileFormat === 'png') {
+        // Save as PNG
+        fs.writeFileSync(outputPath, canvas.toBuffer())
+      }
 
       setTimeout(() => {
         // Output stats
@@ -126,6 +141,8 @@ function dither() {
           status('Percentage reduction: ' + (100 - (inputStats.size / outputStats.size)).toFixed(2) + '%')
         } catch (err) {
           status('Could not read file:' + outputPath)
+          process.exitCode = 1
+          return
         }
         status('Final palette: ' + paletteToHex(reducedPalette).join(','))
         status('Dithered: ' + outputPath)
